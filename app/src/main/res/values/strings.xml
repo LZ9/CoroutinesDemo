@@ -7,4 +7,8 @@
     <string name="scope">Scope</string>
     <string name="repeat">Repeat</string>
     <string name="cancel">Cancel</string>
+    <string name="timeout">Timeout</string>
+    <string name="sync">Sync</string>
+    <string name="async">Async</string>
+
 </resources>
