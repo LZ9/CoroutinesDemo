@@ -23,6 +23,8 @@ class MainActivity : BaseActivity() {
     private val mTimeoutBtn by bindView<MaterialButton>(R.id.timeout_btn)
     private val mSyncBtn by bindView<MaterialButton>(R.id.sync_btn)
     private val mAsyncBtn by bindView<MaterialButton>(R.id.async_btn)
+    private val mLazyAsyncBtn by bindView<MaterialButton>(R.id.lazy_async_btn)
+
 
 
     override fun getLayoutId(): Int = R.layout.activity_main
@@ -71,6 +73,10 @@ class MainActivity : BaseActivity() {
 
         mAsyncBtn.setOnClickListener {
             async()
+        }
+
+        mLazyAsyncBtn.setOnClickListener {
+            lazyAsync()
         }
     }
 
@@ -297,6 +303,24 @@ class MainActivity : BaseActivity() {
         * DefaultDispatcher-worker-1 : The answer is 42
         * DefaultDispatcher-worker-1 : Completed in 513 ms
         */
+    }
+
+    /** 协程懒加载异步调用（需要指明start = CoroutineStart.LAZY），对象使用start()或者await()方法后才会执行协程里的逻辑 */
+    private fun lazyAsync(): Job = GlobalScope.launch {
+        val time = measureTimeMillis {
+            val one = async(start = CoroutineStart.LAZY) { doSomethingUsefulOne() }
+            val two = async(start = CoroutineStart.LAZY) { doSomethingUsefulTwo() }
+            delay(1000)
+            one.start() // 启动第一个
+            two.start() // 启动第二个
+            log("The answer is ${one.await() + two.await()}")
+        }
+        log("Completed in $time ms")
+
+        /*
+         * DefaultDispatcher-worker-1 : The answer is 42
+         * DefaultDispatcher-worker-1 : Completed in 1514 ms
+         */
     }
 
     private suspend fun doSomethingUsefulOne(): Int {

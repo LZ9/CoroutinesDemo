@@ -81,16 +81,6 @@
             android:textAllCaps="false"
             android:textColor="@android:color/white" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/sync_btn"
-            style="?android:attr/borderlessButtonStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="5dp"
-            android:text="@string/sync"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white" />
-
     </LinearLayout>
 
 
@@ -100,11 +90,31 @@
         android:orientation="horizontal">
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/sync_btn"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sync"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/async_btn"
             style="?android:attr/borderlessButtonStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
             android:text="@string/async"
+            android:textAllCaps="false"
+            android:textColor="@android:color/white" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/lazy_async_btn"
+            style="?android:attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="5dp"
+            android:text="@string/lazy_async"
             android:textAllCaps="false"
             android:textColor="@android:color/white" />
 
