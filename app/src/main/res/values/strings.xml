@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">CoroutinesDemo</string>
+
+    <string name="blocking_main">是否阻塞UI线程</string>
+    <string name="run_blocking_delay">RunBlocking Delay</string>
+    <string name="job_join">Job Join</string>
+    <string name="scope">Scope</string>
+    <string name="repeat">Repeat</string>
+    <string name="cancel">Cancel</string>
 </resources>
