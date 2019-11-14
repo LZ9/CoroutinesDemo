@@ -24,8 +24,8 @@ class MainActivity : BaseActivity() {
     private val mSyncBtn by bindView<MaterialButton>(R.id.sync_btn)
     private val mAsyncBtn by bindView<MaterialButton>(R.id.async_btn)
     private val mLazyAsyncBtn by bindView<MaterialButton>(R.id.lazy_async_btn)
-
-
+    private val mDispatcherBtn by bindView<MaterialButton>(R.id.dispatcher_btn)
+    private val mMainScopeBtn by bindView<MaterialButton>(R.id.main_scope_btn)
 
     override fun getLayoutId(): Int = R.layout.activity_main
 
@@ -77,6 +77,14 @@ class MainActivity : BaseActivity() {
 
         mLazyAsyncBtn.setOnClickListener {
             lazyAsync()
+        }
+
+        mDispatcherBtn.setOnClickListener {
+           dispatcher()
+        }
+
+        mMainScopeBtn.setOnClickListener {
+
         }
     }
 
@@ -308,12 +316,24 @@ class MainActivity : BaseActivity() {
     /** 协程懒加载异步调用（需要指明start = CoroutineStart.LAZY），对象使用start()或者await()方法后才会执行协程里的逻辑 */
     private fun lazyAsync(): Job = GlobalScope.launch {
         val time = measureTimeMillis {
-            val one = async(start = CoroutineStart.LAZY) { doSomethingUsefulOne() }
-            val two = async(start = CoroutineStart.LAZY) { doSomethingUsefulTwo() }
-            delay(1000)
-            one.start() // 启动第一个
-            two.start() // 启动第二个
-            log("The answer is ${one.await() + two.await()}")
+//            val one = async(start = CoroutineStart.LAZY) { doSomethingUsefulOne() }
+//            val two = async(start = CoroutineStart.LAZY) { doSomethingUsefulTwo() }
+//            delay(1000)
+//            one.start() // 启动第一个
+//            two.start() // 启动第二个
+//            log("The answer is ${one.await() + two.await()}")
+
+            /*
+             * DefaultDispatcher-worker-1 : The answer is 42
+             * DefaultDispatcher-worker-1 : Completed in 1514 ms
+             */
+
+
+            log("The answer is ${concurrentSum()}")
+            /*
+             * DefaultDispatcher-worker-3 : The answer is 42
+             * DefaultDispatcher-worker-3 : Completed in 512 ms
+             */
         }
         log("Completed in $time ms")
 
@@ -333,6 +353,39 @@ class MainActivity : BaseActivity() {
         return 29
     }
 
+    /** 将两个异步协程方法组合成一个协程域 */
+    private suspend fun concurrentSum(): Int = coroutineScope {
+        val one = async { doSomethingUsefulOne() }
+        val two = async { doSomethingUsefulTwo() }
+        one.await() + two.await()
+    }
+
+    /** 协程调度器 */
+    private fun dispatcher()  = runBlocking {
+        launch {
+            log("launch")
+        }
+        GlobalScope.launch {
+            log("GlobalScope.launch")
+        }
+        GlobalScope.launch(Dispatchers.Main) {
+            log("GlobalScope.launch(Dispatchers.Main)")
+        }
+        GlobalScope.launch(Dispatchers.IO) {
+            log("GlobalScope.launch(Dispatchers.IO)")
+        }
+        GlobalScope.launch(Dispatchers.Default) {
+            log("GlobalScope.launch(Dispatchers.Default)")
+        }
+
+        /*
+         * DefaultDispatcher-worker-1 : GlobalScope.launch
+         * DefaultDispatcher-worker-1 : GlobalScope.launch(Dispatchers.IO)
+         * DefaultDispatcher-worker-3 : GlobalScope.launch(Dispatchers.Default)
+         * main : launch
+         * main : GlobalScope.launch(Dispatchers.Main)
+         */
+    }
 
     override fun initData() {
         super.initData()

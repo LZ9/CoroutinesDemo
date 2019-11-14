@@ -11,5 +11,9 @@
     <string name="sync">Sync</string>
     <string name="async">Async</string>
     <string name="lazy_async">Lazy Async</string>
+    <string name="dispatcher">Dispatcher</string>
+    <string name="main_scope">Main Scope</string>
+    <string name="main_scope_tips">onPause Cancel</string>
+
 
 </resources>
