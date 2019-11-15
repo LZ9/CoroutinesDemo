@@ -7,6 +7,7 @@ import com.lodz.android.corekt.anko.getColorCompat
 import com.lodz.android.corekt.log.PrintLog
 import com.lodz.android.pandora.base.activity.BaseActivity
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import kotlin.system.measureTimeMillis
 
 class MainActivity : BaseActivity() {
@@ -25,7 +26,12 @@ class MainActivity : BaseActivity() {
     private val mAsyncBtn by bindView<MaterialButton>(R.id.async_btn)
     private val mLazyAsyncBtn by bindView<MaterialButton>(R.id.lazy_async_btn)
     private val mDispatcherBtn by bindView<MaterialButton>(R.id.dispatcher_btn)
-    private val mMainScopeBtn by bindView<MaterialButton>(R.id.main_scope_btn)
+    private val mFlowBtn by bindView<MaterialButton>(R.id.flow_btn)
+    private val mTimeoutFlowBtn by bindView<MaterialButton>(R.id.timeout_flow_btn)
+    private val mTransformTakeFlowBtn by bindView<MaterialButton>(R.id.transform_take_flow_btn)
+
+
+
 
     override fun getLayoutId(): Int = R.layout.activity_main
 
@@ -41,6 +47,7 @@ class MainActivity : BaseActivity() {
     }
 
 
+    @FlowPreview
     override fun setListeners() {
         super.setListeners()
         mRunBlockingDelayBtn.setOnClickListener {
@@ -83,8 +90,16 @@ class MainActivity : BaseActivity() {
            dispatcher()
         }
 
-        mMainScopeBtn.setOnClickListener {
+        mFlowBtn.setOnClickListener {
+            flowTest()
+        }
 
+        mTimeoutFlowBtn.setOnClickListener {
+            timeoutFlow()
+        }
+
+        mTransformTakeFlowBtn.setOnClickListener {
+            transformTakeFlow()
         }
     }
 
@@ -93,11 +108,11 @@ class MainActivity : BaseActivity() {
         // 在后台启动一个新的协程并继续
         GlobalScope.launch {
             delay(1000)
-            log("GlobalScope.launch 启动协程，延迟1秒")
+            logd("GlobalScope.launch 启动协程，延迟1秒")
         }
-        log("runBlocking 主线程执行")// 主协程在这里会立即执行
+        logd("runBlocking 主线程执行")// 主协程在这里会立即执行
         delay(2000)
-        log("runBlocking 主线程延迟2秒执行")
+        logd("runBlocking 主线程延迟2秒执行")
 
         /*
          * main : runBlocking 主线程执行
@@ -111,9 +126,9 @@ class MainActivity : BaseActivity() {
         // 启动一个新协程并保持对这个作业的引用
         val job = GlobalScope.launch {
             delay(1000)
-            log("GlobalScope.launch 启动协程，延迟1秒")
+            logd("GlobalScope.launch 启动协程，延迟1秒")
         }
-        log("runBlocking 主线程执行")
+        logd("runBlocking 主线程执行")
         job.join()// 阻塞主线程等待直到子协程执行结束
 
 
@@ -127,18 +142,18 @@ class MainActivity : BaseActivity() {
     private fun scope() = runBlocking {
         launch {
             delay(200L)
-            log("launch 启动协程，延迟200毫秒")
+            logd("launch 启动协程，延迟200毫秒")
         }
         // 创建一个协程作用域
         coroutineScope {
             launch {
                 delay(500L)
-                log("协程作用域 coroutineScope launch 启动，延迟500毫秒")
+                logd("协程作用域 coroutineScope launch 启动，延迟500毫秒")
             }
             delay(100L)
-            log("协程作用域 coroutineScope，延迟100毫秒")
+            logd("协程作用域 coroutineScope，延迟100毫秒")
         }
-        log("runBlocking 主线程执行")
+        logd("runBlocking 主线程执行")
 
         /*
          * main : 协程作用域 coroutineScope，延迟100毫秒
@@ -151,7 +166,7 @@ class MainActivity : BaseActivity() {
     /** 启用固定量的协程 */
     private fun repeat(): Job = GlobalScope.launch {
         repeat(10) { i ->
-            log("times -> $i")
+            logd("times -> $i")
             delay(100L)
         }
         /*
@@ -178,7 +193,7 @@ class MainActivity : BaseActivity() {
 //            while (i < 5) { // 一个执行计算的循环，只是为了占用 CPU
 //                // 每秒打印消息两次
 //                if (System.currentTimeMillis() >= nextPrintTime) {
-//                    log("job: I'm sleeping ${i++} ...")
+//                    logd("job: I'm sleeping ${i++} ...")
 //                    nextPrintTime += 500L
 //                }
 //            }
@@ -196,20 +211,20 @@ class MainActivity : BaseActivity() {
 
             try {
                 repeat(1000) { i ->
-                    log("job I'm sleeping $i ...")
+                    logd("job I'm sleeping $i ...")
                     delay(500L)
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
                 // 运行中的协程被取消会抛出异常JobCancellationException
-                log("job exception " + e.toString())
+                logd("job exception " + e.toString())
             } finally {
-                log("job  I'm running finally")
+                logd("job  I'm running finally")
                 withContext(NonCancellable) {
                     // 使用withContext(NonCancellable)可以让协程被取消时依然继续执行逻辑
-                    log("job finally 取消后延迟1秒")
+                    logd("job finally 取消后延迟1秒")
                     delay(1000L)
-                    log("job finally 完成1秒延迟")
+                    logd("job finally 完成1秒延迟")
                 }
             }
 
@@ -226,11 +241,11 @@ class MainActivity : BaseActivity() {
              */
         }
         delay(1300L) // 延迟一段时间让job里的逻辑执行
-        log("try cancel")
+        logd("try cancel")
 //        job.cancel() // 取消该作业（协程内的逻辑还会执行）
 //        job.join() // 等待直到协程内逻辑执行完成
         job.cancelAndJoin() // 取消该作业并等待直到协程内逻辑执行完成
-        log("already cancel")
+        logd("already cancel")
     }
 
     /** 协程超时，可以使用withTimeoutOrNull包裹，如果超时返回null */
@@ -238,13 +253,13 @@ class MainActivity : BaseActivity() {
 //        try {
 //            withTimeout(1300L) {
 //                repeat(1000) { i ->
-//                    log("I'm sleeping $i ...")
+//                    logd("I'm sleeping $i ...")
 //                    delay(500L)
 //                }
 //            }
 //        } catch (e: Exception) {
 //            e.printStackTrace()
-//            log("withTimeout exception " + e.toString())
+//            logd("withTimeout exception " + e.toString())
 //        }
 
         /*
@@ -259,12 +274,12 @@ class MainActivity : BaseActivity() {
             var str = ""
             repeat( 4) { i ->
                 str += i
-                log("I'm sleeping $i ...")
+                logd("I'm sleeping $i ...")
                 delay(500L)
             }
             str // 在它运行得到结果之前取消它
         }
-        log("Result is $result")
+        logd("Result is $result")
 
 
         /* withTimeoutOrNull(1300L)
@@ -288,9 +303,9 @@ class MainActivity : BaseActivity() {
         val time = measureTimeMillis {
             val one = doSomethingUsefulOne()
             val two = doSomethingUsefulTwo()
-            log("The answer is ${one + two}")
+            logd("The answer is ${one + two}")
         }
-        log("Completed in $time ms")
+        logd("Completed in $time ms")
 
         /*
          * DefaultDispatcher-worker-1 : The answer is 42
@@ -303,9 +318,9 @@ class MainActivity : BaseActivity() {
         val time = measureTimeMillis {
             val one = async { doSomethingUsefulOne() }
             val two = async { doSomethingUsefulTwo() }
-            log("The answer is ${one.await() + two.await()}")
+            logd("The answer is ${one.await() + two.await()}")
         }
-        log("Completed in $time ms")
+        logd("Completed in $time ms")
 
         /*
         * DefaultDispatcher-worker-1 : The answer is 42
@@ -321,7 +336,7 @@ class MainActivity : BaseActivity() {
 //            delay(1000)
 //            one.start() // 启动第一个
 //            two.start() // 启动第二个
-//            log("The answer is ${one.await() + two.await()}")
+//            logd("The answer is ${one.await() + two.await()}")
 
             /*
              * DefaultDispatcher-worker-1 : The answer is 42
@@ -329,13 +344,13 @@ class MainActivity : BaseActivity() {
              */
 
 
-            log("The answer is ${concurrentSum()}")
+            logd("The answer is ${concurrentSum()}")
             /*
              * DefaultDispatcher-worker-3 : The answer is 42
              * DefaultDispatcher-worker-3 : Completed in 512 ms
              */
         }
-        log("Completed in $time ms")
+        logd("Completed in $time ms")
 
         /*
          * DefaultDispatcher-worker-1 : The answer is 42
@@ -363,19 +378,19 @@ class MainActivity : BaseActivity() {
     /** 协程调度器 */
     private fun dispatcher()  = runBlocking {
         launch {
-            log("launch")
+            logd("launch")
         }
         GlobalScope.launch {
-            log("GlobalScope.launch")
+            logd("GlobalScope.launch")
         }
         GlobalScope.launch(Dispatchers.Main) {
-            log("GlobalScope.launch(Dispatchers.Main)")
+            logd("GlobalScope.launch(Dispatchers.Main)")
         }
         GlobalScope.launch(Dispatchers.IO) {
-            log("GlobalScope.launch(Dispatchers.IO)")
+            logd("GlobalScope.launch(Dispatchers.IO)")
         }
         GlobalScope.launch(Dispatchers.Default) {
-            log("GlobalScope.launch(Dispatchers.Default)")
+            logd("GlobalScope.launch(Dispatchers.Default)")
         }
 
         /*
@@ -387,12 +402,104 @@ class MainActivity : BaseActivity() {
          */
     }
 
+
+    /** 流构建器，每当collect的时候才会执行flow里的逻辑 */
+    @FlowPreview
+    private fun flows(): Flow<Int> = flow {
+        // 流构建器
+        for (i in 1..3) {
+            delay(100) // 假装我们在这里做了一些有用的事情
+            logi("flowTest emit : $i")
+            emit(i) // 发送下一个值
+        }
+    }
+
+    /** 流测试，多次collect */
+    @FlowPreview
+    private fun flowTest(): Job = GlobalScope.launch {
+        // 多次收集流
+        loge("collect first")
+        flows().collect { value -> logd("flowTest collect : $value") }
+        loge("collect again")
+        flows().collect { value -> logd("flowTest collect : $value") }
+
+        /*
+         * DefaultDispatcher-worker-1 : collect first
+         * DefaultDispatcher-worker-1 : flowTest emit : 1
+         * DefaultDispatcher-worker-1 : flowTest collect : 1
+         * DefaultDispatcher-worker-1 : flowTest emit : 2
+         * DefaultDispatcher-worker-1 : flowTest collect : 2
+         * DefaultDispatcher-worker-3 : flowTest emit : 3
+         * DefaultDispatcher-worker-3 : flowTest collect : 3
+         * DefaultDispatcher-worker-3 : collect again
+         * DefaultDispatcher-worker-3 : flowTest emit : 1
+         * DefaultDispatcher-worker-3 : flowTest collect : 1
+         * DefaultDispatcher-worker-3 : flowTest emit : 2
+         * DefaultDispatcher-worker-3 : flowTest collect : 2
+         * DefaultDispatcher-worker-1 : flowTest emit : 3
+         * DefaultDispatcher-worker-1 : flowTest collect : 3
+         */
+    }
+
+    /** 控制流超时返回null，map操作符可以对流数据进行过渡操作 */
+    @FlowPreview
+    private fun timeoutFlow(): Job = GlobalScope.launch {
+        // 在 250 毫秒后超时
+        val result = withTimeoutOrNull(250) {
+            // 将一个整数区间转化为流
+            (1..5).asFlow()
+                .map { value ->
+                    delay(100)
+                    value
+                }
+                .collect { value -> logd("timeoutFlow collect : $value") }
+            "timeoutFlow success"
+        }
+        loge("timeoutFlow result : $result")
+
+        /*
+         * DefaultDispatcher-worker-1 : timeoutFlow collect : 1
+         * DefaultDispatcher-worker-3 : timeoutFlow collect : 2
+         * DefaultDispatcher-worker-3 : timeoutFlow result : null
+         */
+    }
+
+    /** transform可以进行数据控制决定要把哪些数据给下游，take可以指定获取前n个数据 */
+    @FlowPreview
+    private fun transformTakeFlow(): Job = GlobalScope.launch {
+        (1..5).asFlow()
+            .take(3)
+            .transform { value ->
+                logi("timeoutFlow take : $value")
+                if (value % 2 == 1) {
+                    emit(value)
+                }
+            }
+            .collect { value -> logd("timeoutFlow collect : $value") }
+
+        /*
+         * DefaultDispatcher-worker-2 : timeoutFlow take : 1
+         * DefaultDispatcher-worker-2 : timeoutFlow collect : 1
+         * DefaultDispatcher-worker-2 : timeoutFlow take : 2
+         * DefaultDispatcher-worker-2 : timeoutFlow take : 3
+         * DefaultDispatcher-worker-2 : timeoutFlow collect : 3
+         */
+    }
+
     override fun initData() {
         super.initData()
         showStatusCompleted()
     }
 
-    private fun log(msg: String) {
+    private fun logd(msg: String) {
         PrintLog.dS(TAG, Thread.currentThread().name + " : " + msg)
+    }
+
+    private fun loge(msg: String) {
+        PrintLog.eS(TAG, Thread.currentThread().name + " : " + msg)
+    }
+
+    private fun logi(msg: String) {
+        PrintLog.iS(TAG, Thread.currentThread().name + " : " + msg)
     }
 }
