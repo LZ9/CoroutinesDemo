@@ -14,7 +14,9 @@
     <string name="dispatcher">Dispatcher</string>
     <string name="flow">Flow</string>
     <string name="timeout_flow">Timeout Flow</string>
-    <string name="transform_take_flow">Transform take Flow</string>
+    <string name="transform_take_flow">Transform Take Flow</string>
+    <string name="zip_flow">Zip Flow</string>
+    <string name="channel">channel</string>
 
 
 

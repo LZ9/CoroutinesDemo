@@ -7,6 +7,7 @@ import com.lodz.android.corekt.anko.getColorCompat
 import com.lodz.android.corekt.log.PrintLog
 import com.lodz.android.pandora.base.activity.BaseActivity
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlin.system.measureTimeMillis
 
@@ -29,6 +30,8 @@ class MainActivity : BaseActivity() {
     private val mFlowBtn by bindView<MaterialButton>(R.id.flow_btn)
     private val mTimeoutFlowBtn by bindView<MaterialButton>(R.id.timeout_flow_btn)
     private val mTransformTakeFlowBtn by bindView<MaterialButton>(R.id.transform_take_flow_btn)
+    private val mZipFlowBtn by bindView<MaterialButton>(R.id.zip_flow_btn)
+    private val mChannelBtn by bindView<MaterialButton>(R.id.channel_btn)
 
 
 
@@ -100,6 +103,14 @@ class MainActivity : BaseActivity() {
 
         mTransformTakeFlowBtn.setOnClickListener {
             transformTakeFlow()
+        }
+
+        mZipFlowBtn.setOnClickListener {
+            zipFlow()
+        }
+
+        mChannelBtn.setOnClickListener {
+            channel()
         }
     }
 
@@ -485,6 +496,55 @@ class MainActivity : BaseActivity() {
          * DefaultDispatcher-worker-2 : timeoutFlow collect : 3
          */
     }
+
+    /** zip合并两个flow组合的数据 */
+    @FlowPreview
+    private fun zipFlow(): Job = GlobalScope.launch {
+        val nums = (1..3).asFlow() // 数字 1..3
+        val strs = flowOf("one", "two", "three") // 字符串
+        nums.zip(strs) { a, b -> "$a -> $b" } // 组合单个字符串
+            .collect { value -> logd("timeoutFlow collect : $value") } // 收集并打印
+
+        /*
+         * DefaultDispatcher-worker-2 : timeoutFlow collect : 1 -> one
+         * DefaultDispatcher-worker-2 : timeoutFlow collect : 2 -> two
+         * DefaultDispatcher-worker-5 : timeoutFlow collect : 3 -> three
+         */
+    }
+
+    /** channel通道每send一次receive就回调一次 */
+    private fun channel(): Job = GlobalScope.launch {
+        val channel = Channel<Int>()
+        launch {
+            // 这里可能是消耗大量 CPU 运算的异步逻辑，我们将仅仅做 5 次整数的平方并发送
+            for (x in 1..5) {
+                delay(200)
+                logi("channel x : $x")
+                channel.send(x * x)
+            }
+        }
+        // 这里我们打印了 5 次被接收的整数：
+        repeat(5) {
+            logd(channel.receive().toString())
+        }
+        loge("Done!")
+
+        /*
+         * DefaultDispatcher-worker-1 : channel x : 1
+         * DefaultDispatcher-worker-1 : 1
+         * DefaultDispatcher-worker-4 : channel x : 2
+         * DefaultDispatcher-worker-2 : 4
+         * DefaultDispatcher-worker-4 : channel x : 3
+         * DefaultDispatcher-worker-7 : 9
+         * DefaultDispatcher-worker-8 : channel x : 4
+         * DefaultDispatcher-worker-7 : 16
+         * DefaultDispatcher-worker-7 : channel x : 5
+         * DefaultDispatcher-worker-1 : 25
+         * DefaultDispatcher-worker-1 : Done!
+         */
+    }
+
+
 
     override fun initData() {
         super.initData()
