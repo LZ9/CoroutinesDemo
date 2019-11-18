@@ -32,7 +32,7 @@ class MainActivity : BaseActivity() {
     private val mTransformTakeFlowBtn by bindView<MaterialButton>(R.id.transform_take_flow_btn)
     private val mZipFlowBtn by bindView<MaterialButton>(R.id.zip_flow_btn)
     private val mChannelBtn by bindView<MaterialButton>(R.id.channel_btn)
-
+    private val mCloseChannelBtn by bindView<MaterialButton>(R.id.close_channel_btn)
 
 
 
@@ -111,6 +111,10 @@ class MainActivity : BaseActivity() {
 
         mChannelBtn.setOnClickListener {
             channel()
+        }
+
+        mCloseChannelBtn.setOnClickListener {
+            closeChannel()
         }
     }
 
@@ -544,7 +548,30 @@ class MainActivity : BaseActivity() {
          */
     }
 
+    private fun closeChannel(): Job = GlobalScope.launch {
+        val channel = Channel<Int>()
+        launch {
+            for (x in 1..5) {
+                channel.send(x * x)
+                if (x == 4){
+                    channel.close() // 我们结束发送
+                }
+            }
+        }
+        // 这里我们使用 `for` 循环来打印所有被接收到的元素（直到通道被关闭）
+        for (y in channel) {
+            logd(y.toString())
+        }
+        loge("Done!")
 
+        /*
+         * DefaultDispatcher-worker-5 : 1
+         * DefaultDispatcher-worker-5 : 4
+         * DefaultDispatcher-worker-5 : 9
+         * DefaultDispatcher-worker-5 : 16
+         * DefaultDispatcher-worker-1 : Done!
+         */
+    }
 
     override fun initData() {
         super.initData()

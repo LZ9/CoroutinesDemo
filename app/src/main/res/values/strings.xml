@@ -16,7 +16,8 @@
     <string name="timeout_flow">Timeout Flow</string>
     <string name="transform_take_flow">Transform Take Flow</string>
     <string name="zip_flow">Zip Flow</string>
-    <string name="channel">channel</string>
+    <string name="channel">Channel</string>
+    <string name="close_channel">Close Channel</string>
 
 
 
